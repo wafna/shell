@@ -24,8 +24,12 @@ parseLiteralsSpec = describe "literals" $ do
   it "char literals" $ Right [CharLit '5', CharLit '6', CharLit '7'] == doParse (many parseLiteral) "'5' '6' '7'"
   it "string literals" $ Right [StringLit "5", StringLit "6", StringLit "7"] == doParse (many parseLiteral) "\"5\" \"6\" \"7\""
 
+parseBinaryOpsSpec :: Spec
+parseBinaryOpsSpec = describe "binary operators" $ do
+  it "all" $ Right [BOAdd, BOSub, BOMul, BODiv] == doParse (many parseBinaryOp) "+ - * /"
 
 main :: IO ()
 main = hspec $ do
   parserSpec
   parseLiteralsSpec
+  parseBinaryOpsSpec

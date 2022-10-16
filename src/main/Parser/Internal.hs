@@ -1,7 +1,10 @@
 module Parser.Internal 
-  ( Parser, parseStuff,
-    Literal (..),
-    parseLiteral
+  ( Parser, parseStuff
+  , Literal (..)
+  , parseLiteral
+  , BinaryOp (..)
+  , parseBinaryOp
+  , Expr (..)
   ) where
 
 import Data.Text (Text)
@@ -24,7 +27,12 @@ data Literal
   deriving (Eq, Show)
 
 data BinaryOp
- = BOAdd | BOSub | BOMult | BODiv
+  = BOAdd | BOSub | BOMul | BODiv
+  deriving (Eq, Show)
+
+data Expr
+  = ExprLit Literal
+  | ExprBO Expr BinaryOp Expr
 
 spaceOut :: Parser ()
 spaceOut = L.space
@@ -41,24 +49,28 @@ symbol = L.symbol spaceOut
 
 -- Literals
 
-charLiteral :: Parser Literal
-charLiteral = CharLit <$> (lexeme $ between (char '\'') (char '\'') L.charLiteral)
-
-stringLiteral :: Parser Literal
-stringLiteral = StringLit <$> (lexeme $ char '\"' *> manyTill L.charLiteral (char '\"'))
-
-integerLiteral :: Parser Literal
-integerLiteral = IntegerLit <$> lexeme L.decimal
-
 parseLiteral :: Parser Literal
-parseLiteral = choice
-    [ integerLiteral
-    , stringLiteral
-    , charLiteral
-    ]
+parseLiteral = choice [ integerLiteral, stringLiteral, charLiteral]
+  where
+  charLiteral :: Parser Literal
+  charLiteral = CharLit <$> (lexeme $ between (char '\'') (char '\'') L.charLiteral)
+  stringLiteral :: Parser Literal
+  stringLiteral = StringLit <$> (lexeme $ char '\"' *> manyTill L.charLiteral (char '\"'))
+  integerLiteral :: Parser Literal
+  integerLiteral = IntegerLit <$> lexeme L.decimal
 
-parseStuff :: Parser [Literal]
+parseBinaryOp :: Parser BinaryOp
+parseBinaryOp = choice [pOp "+" BOAdd, pOp "-" BOSub, pOp "*" BOMul, pOp "/" BODiv]
+  where
+  pOp :: Text -> BinaryOp -> Parser BinaryOp
+  pOp s o = o <$ symbol s
+
+-- top parser
+
+parseStuff :: Parser String
 parseStuff = do
-  stuff <- many $ parseLiteral
+  t1 <- parseLiteral
+  op <- parseBinaryOp
+  t2 <- parseLiteral
   eof
-  return stuff
+  return $ show t1 ++ " " ++ show op ++ " " ++ show t2

@@ -5,6 +5,5 @@ import Parser
 
 main :: IO ()
 main = do
-  parseTest parseStuff 
-    "5 //comment\n\t\
-  	\ '6' \"78\""
+  parseTest parseStuff "5 + 6 //comment\n\t\
+  	\"
