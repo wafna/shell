@@ -1,5 +1,5 @@
 module Parser (
-  Parser, Thingy(..), parseStuff
+  Parser, Literal(..), parseStuff
  ) where
 
 import Parser.Internal

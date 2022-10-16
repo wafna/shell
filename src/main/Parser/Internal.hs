@@ -1,7 +1,7 @@
 module Parser.Internal 
   ( Parser, parseStuff,
-    Thingy (..),
-    charLiteral, stringLiteral, integerLiteral
+    Literal (..),
+    parseLiteral
   ) where
 
 import Data.Text (Text)
@@ -17,11 +17,14 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = Parsec Void Text
 
-data Thingy
+data Literal
   = IntegerLit Integer
   | StringLit String
   | CharLit Char
   deriving (Eq, Show)
+
+data BinaryOp
+ = BOAdd | BOSub | BOMult | BODiv
 
 spaceOut :: Parser ()
 spaceOut = L.space
@@ -33,21 +36,29 @@ spaceOut = L.space
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme spaceOut
 
-charLiteral :: Parser Thingy
+symbol :: Text -> Parser Text
+symbol = L.symbol spaceOut
+
+-- Literals
+
+charLiteral :: Parser Literal
 charLiteral = CharLit <$> (lexeme $ between (char '\'') (char '\'') L.charLiteral)
 
-stringLiteral :: Parser Thingy
+stringLiteral :: Parser Literal
 stringLiteral = StringLit <$> (lexeme $ char '\"' *> manyTill L.charLiteral (char '\"'))
 
-integerLiteral :: Parser Thingy
+integerLiteral :: Parser Literal
 integerLiteral = IntegerLit <$> lexeme L.decimal
 
-parseStuff :: Parser [Thingy]
-parseStuff = do
-  stuff <- many $ choice
+parseLiteral :: Parser Literal
+parseLiteral = choice
     [ integerLiteral
     , stringLiteral
     , charLiteral
     ]
+
+parseStuff :: Parser [Literal]
+parseStuff = do
+  stuff <- many $ parseLiteral
   eof
   return stuff

@@ -1,8 +1,8 @@
 module Main (main) where
 
-import qualified Data.Map as Map
-import qualified Data.Either as Either
-import Data.List (intercalate)
+-- import qualified Data.Map as Map
+-- import qualified Data.Either as Either
+-- import Data.List (intercalate)
 import Data.Text
 import Data.Void
 
@@ -12,19 +12,20 @@ import Parser.Internal
 import Test.Hspec
 
 
-doParse :: Parser a -> String -> Text -> Either (ParseErrorBundle Text Void) a
-doParse parser source input = runParser parser source input
+doParse :: Parser a -> Text -> Either (ParseErrorBundle Text Void) a
+doParse parser input = runParser parser "TEST" input
 
 parserSpec :: Spec
 parserSpec = it "parses stuff" pending
 
-integerLiterals :: Spec
-integerLiterals = describe "integer literals" $ do
-    describe "single digit" $ do
-        it "foo" $ Right [IntegerLit 5, IntegerLit 6, IntegerLit 7] == doParse (many integerLiteral) "TEST" "5 6 7"
-  
+parseLiteralsSpec :: Spec
+parseLiteralsSpec = describe "literals" $ do
+  it "integer literals" $ Right [IntegerLit 5, IntegerLit 6, IntegerLit 7] == doParse (many parseLiteral) "5 6 7"
+  it "char literals" $ Right [CharLit '5', CharLit '6', CharLit '7'] == doParse (many parseLiteral) "'5' '6' '7'"
+  it "string literals" $ Right [StringLit "5", StringLit "6", StringLit "7"] == doParse (many parseLiteral) "\"5\" \"6\" \"7\""
+
 
 main :: IO ()
 main = hspec $ do
   parserSpec
-  integerLiterals
+  parseLiteralsSpec
