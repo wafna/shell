@@ -1,11 +1,9 @@
 module Parser.Internal 
   ( Parser
   , shellP
-  , Literal (..)
-  , literalP
-  , BinaryOp (..)
-  , binaryOpP
-  , Expr (..)
+  , Literal (..), literalP
+  , BinaryOp (..), binaryOpP
+  , Expr (..), exprP
   ) where
 
 import Data.Text (Text)
@@ -33,12 +31,12 @@ data UnaryOp
   deriving (Eq, Show)
 
 data BinaryOp
-  = BOAdd | BOSub | BOMul | BODiv
+  = BinOpAdd | BinOpSub | BinOpMul | BinOpDiv
   deriving (Eq, Show)
 
 data Expr
   = ExprLit Literal
-  | ExprBO Expr BinaryOp Expr
+  | ExprBinOp Expr BinaryOp Expr
   deriving (Eq, Show)
 
 spaceOut :: Parser ()
@@ -63,38 +61,47 @@ idP = lexeme $ do
 -- Literals
 
 literalP :: Parser Literal
-literalP = choice [ nameLiteral, integerLiteral, stringLiteral, charLiteral]
+literalP = choice [ nameLitP, integerLitP, stringLitP, charLitP]
   where
-  nameLiteral :: Parser Literal
-  nameLiteral = NameLit <$> idP
-  charLiteral :: Parser Literal
-  charLiteral = CharLit <$> (lexeme $ between (char '\'') (char '\'') L.charLiteral)
-  stringLiteral :: Parser Literal
-  stringLiteral = StringLit <$> (lexeme $ char '\"' *> manyTill L.charLiteral (char '\"'))
-  integerLiteral :: Parser Literal
-  integerLiteral = IntegerLit <$> lexeme L.decimal
+  nameLitP :: Parser Literal
+  nameLitP = NameLit <$> idP
+  charLitP :: Parser Literal
+  charLitP = CharLit <$> (lexeme $ between (char '\'') (char '\'') L.charLiteral)
+  stringLitP :: Parser Literal
+  stringLitP = StringLit <$> (lexeme $ char '\"' *> manyTill L.charLiteral (char '\"'))
+  integerLitP :: Parser Literal
+  integerLitP = IntegerLit <$> lexeme L.decimal
 
 binaryOpP :: Parser BinaryOp
-binaryOpP = choice [pOp "+" BOAdd, pOp "-" BOSub, pOp "*" BOMul, pOp "/" BODiv]
+binaryOpP = choice [opP "+" BinOpAdd, opP "-" BinOpSub, opP "*" BinOpMul, opP "/" BinOpDiv]
   where
-  pOp :: Text -> BinaryOp -> Parser BinaryOp
-  pOp s o = o <$ symbol s
+  opP :: Text -> BinaryOp -> Parser BinaryOp
+  opP s o = o <$ symbol s
 
+-- All arithmetic is left associative and there is no precedence of operations.
 exprP :: Parser Expr
 exprP = do
-  left <- exprHeadP
-  (op, right) <- exprTailP
-  return $ ExprBO left op right
+  h <- exprParenP <|> try exprHeadLitP <|> exprLitP
+  t <- optional $ do 
+    op <- binaryOpP
+    r <- exprP
+    return (op, r)
+  return $ case t of 
+    Nothing -> h
+    Just (op, r) -> ExprBinOp h op r
   where
+  -- TODO this needs to expand to cover object graphs, array indexing, etc.
   exprLitP :: Parser Expr
   exprLitP = ExprLit <$> literalP
-  exprHeadP :: Parser Expr
-  exprHeadP = exprLitP
-  exprTailP :: Parser (BinaryOp, Expr)
-  exprTailP = do
+  exprParenP :: Parser Expr
+  exprParenP = between (char '(') (char ')') exprP
+  -- This lets us grab the head of an arithmetic expression so we can be left associative.
+  exprHeadLitP :: Parser Expr
+  exprHeadLitP = do
+    h <- exprLitP
     op <- binaryOpP
-    rhs <- exprLitP
-    return (op, rhs)
+    t <- exprLitP
+    return $ ExprBinOp h op t
 
 -- top parser
 

@@ -20,17 +20,23 @@ parserSpec = it "parses stuff" pending
 
 literalPSpec :: Spec
 literalPSpec = describe "literals" $ do
-  it "name literals" $ Right [NameLit "bing", NameLit "bang", NameLit "boom"] == doParse (many literalP) "bing bang boom"
-  it "integer literals" $ Right [IntegerLit 5, IntegerLit 6, IntegerLit 7] == doParse (many literalP) "5 6 7"
-  it "char literals" $ Right [CharLit '5', CharLit '6', CharLit '7'] == doParse (many literalP) "'5' '6' '7'"
-  it "string literals" $ Right [StringLit "5", StringLit "6", StringLit "7"] == doParse (many literalP) "\"5\" \"6\" \"7\""
+  it "name" $ Right [NameLit "bing", NameLit "bang", NameLit "boom"] == doParse (many literalP) "bing bang boom"
+  it "integer" $ Right [IntegerLit 5, IntegerLit 6, IntegerLit 7] == doParse (many literalP) "5 6 7"
+  it "char" $ Right [CharLit '5', CharLit '6', CharLit '7'] == doParse (many literalP) "'5' '6' '7'"
+  it "string" $ Right [StringLit "5", StringLit "6", StringLit "7"] == doParse (many literalP) "\"5\" \"6\" \"7\""
 
 binaryOpPSpec :: Spec
 binaryOpPSpec = describe "binary operators" $ do
-  it "all" $ Right [BOAdd, BOSub, BOMul, BODiv] == doParse (many binaryOpP) "+ - * /"
+  it "all" $ Right [BinOpAdd, BinOpSub, BinOpMul, BinOpDiv] == doParse (many binaryOpP) "+ - * /"
+
+exprSpec :: Spec
+exprSpec = describe "expressions" $ do
+    it "simple" $ Right (ExprLit (NameLit "x")) == doParse (exprP) "x"
+    it "arithmetic" $ Right (ExprBinOp (ExprBinOp (ExprLit (NameLit "x")) BinOpDiv (ExprLit (NameLit "y"))) BinOpMul (ExprLit (NameLit "z"))) == doParse (exprP) "x / y * z"
 
 main :: IO ()
 main = hspec $ do
   parserSpec
   literalPSpec
   binaryOpPSpec
+  exprSpec

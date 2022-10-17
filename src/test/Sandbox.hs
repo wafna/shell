@@ -7,4 +7,5 @@ import Parser.Internal
 main :: IO ()
 main = do
   putStrLn "-- sandbox"
-  parseTest (many literalP) "larry curly moe"
+  parseTest (exprP) "larry"
+  parseTest (exprP) "x / y * z"
