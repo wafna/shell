@@ -1,5 +1,7 @@
-module Parser (
-  Parser, Literal(..), parseStuff
- ) where
+module Parser 
+( Parser
+, Literal (..)
+, shellP
+) where
 
 import Parser.Internal

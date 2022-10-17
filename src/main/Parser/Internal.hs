@@ -1,7 +1,8 @@
 module Parser.Internal 
-  ( Parser, parseStuff
+  ( Parser
+  , shellP
   , Literal (..)
-  , parseLiteral
+  , literalP
   , BinaryOp (..)
   , parseBinaryOp
   , Expr (..)
@@ -21,9 +22,14 @@ import qualified Text.Megaparsec.Char.Lexer as L
 type Parser = Parsec Void Text
 
 data Literal
-  = IntegerLit Integer
+  = NameLit String
+  | IntegerLit Integer
   | StringLit String
   | CharLit Char
+  deriving (Eq, Show)
+
+data UnaryOp
+  = UOBang
   deriving (Eq, Show)
 
 data BinaryOp
@@ -33,6 +39,7 @@ data BinaryOp
 data Expr
   = ExprLit Literal
   | ExprBO Expr BinaryOp Expr
+  deriving (Eq, Show)
 
 spaceOut :: Parser ()
 spaceOut = L.space
@@ -47,11 +54,19 @@ lexeme = L.lexeme spaceOut
 symbol :: Text -> Parser Text
 symbol = L.symbol spaceOut
 
+idP :: Parser String
+idP = lexeme $ do 
+  h <- letterChar <|> char '_'
+  t <- many (alphaNumChar <|> char '_')
+  return $ h : t
+
 -- Literals
 
-parseLiteral :: Parser Literal
-parseLiteral = choice [ integerLiteral, stringLiteral, charLiteral]
+literalP :: Parser Literal
+literalP = choice [ nameLiteral, integerLiteral, stringLiteral, charLiteral]
   where
+  nameLiteral :: Parser Literal
+  nameLiteral = NameLit <$> idP
   charLiteral :: Parser Literal
   charLiteral = CharLit <$> (lexeme $ between (char '\'') (char '\'') L.charLiteral)
   stringLiteral :: Parser Literal
@@ -65,12 +80,26 @@ parseBinaryOp = choice [pOp "+" BOAdd, pOp "-" BOSub, pOp "*" BOMul, pOp "/" BOD
   pOp :: Text -> BinaryOp -> Parser BinaryOp
   pOp s o = o <$ symbol s
 
+parseExpr :: Parser Expr
+parseExpr = do
+  left <- parseExprHead
+  (op, right) <- parseExprTail
+  return $ ExprBO left op right
+  where
+  parseExprLit :: Parser Expr
+  parseExprLit = ExprLit <$> literalP
+  parseExprHead :: Parser Expr
+  parseExprHead = parseExprLit
+  parseExprTail :: Parser (BinaryOp, Expr)
+  parseExprTail = do
+    op <- parseBinaryOp
+    rhs <- parseExprLit
+    return (op, rhs)
+
 -- top parser
 
-parseStuff :: Parser String
-parseStuff = do
-  t1 <- parseLiteral
-  op <- parseBinaryOp
-  t2 <- parseLiteral
+shellP :: Parser String
+shellP = do
+  e <- parseExpr
   eof
-  return $ show t1 ++ " " ++ show op ++ " " ++ show t2
+  return $ show e
