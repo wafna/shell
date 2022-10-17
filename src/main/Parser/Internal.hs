@@ -4,7 +4,7 @@ module Parser.Internal
   , Literal (..)
   , literalP
   , BinaryOp (..)
-  , parseBinaryOp
+  , binaryOpP
   , Expr (..)
   ) where
 
@@ -74,32 +74,32 @@ literalP = choice [ nameLiteral, integerLiteral, stringLiteral, charLiteral]
   integerLiteral :: Parser Literal
   integerLiteral = IntegerLit <$> lexeme L.decimal
 
-parseBinaryOp :: Parser BinaryOp
-parseBinaryOp = choice [pOp "+" BOAdd, pOp "-" BOSub, pOp "*" BOMul, pOp "/" BODiv]
+binaryOpP :: Parser BinaryOp
+binaryOpP = choice [pOp "+" BOAdd, pOp "-" BOSub, pOp "*" BOMul, pOp "/" BODiv]
   where
   pOp :: Text -> BinaryOp -> Parser BinaryOp
   pOp s o = o <$ symbol s
 
-parseExpr :: Parser Expr
-parseExpr = do
-  left <- parseExprHead
-  (op, right) <- parseExprTail
+exprP :: Parser Expr
+exprP = do
+  left <- exprHeadP
+  (op, right) <- exprTailP
   return $ ExprBO left op right
   where
-  parseExprLit :: Parser Expr
-  parseExprLit = ExprLit <$> literalP
-  parseExprHead :: Parser Expr
-  parseExprHead = parseExprLit
-  parseExprTail :: Parser (BinaryOp, Expr)
-  parseExprTail = do
-    op <- parseBinaryOp
-    rhs <- parseExprLit
+  exprLitP :: Parser Expr
+  exprLitP = ExprLit <$> literalP
+  exprHeadP :: Parser Expr
+  exprHeadP = exprLitP
+  exprTailP :: Parser (BinaryOp, Expr)
+  exprTailP = do
+    op <- binaryOpP
+    rhs <- exprLitP
     return (op, rhs)
 
 -- top parser
 
 shellP :: Parser String
 shellP = do
-  e <- parseExpr
+  e <- exprP
   eof
   return $ show e

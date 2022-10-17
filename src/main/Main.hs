@@ -1,8 +1,7 @@
 module Main(main) where
 
-import Parser
+-- import Parser
 
 main :: IO ()
 main = do
-  putStrLn "-- parse test"
-  parseTest shellP "5 + 6"
+  putStrLn "-- shell"
