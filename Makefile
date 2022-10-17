@@ -18,4 +18,4 @@ test: FORCE
 	@cabal --enable-tests v2-test
 
 test-log: FORCE
-	@less \"$(find . -name '*-test.log')\"
+	@less "$(find . -name '*-test.log')"
