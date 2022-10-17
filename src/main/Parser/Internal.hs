@@ -24,6 +24,7 @@ data Literal
   | IntegerLit Integer
   | StringLit String
   | CharLit Char
+  | BoolLit Bool
   deriving (Eq, Show)
 
 data UnaryOp
@@ -61,8 +62,10 @@ idP = lexeme $ do
 -- Literals
 
 literalP :: Parser Literal
-literalP = choice [ nameLitP, integerLitP, stringLitP, charLitP]
+literalP = choice [ boolLit, nameLitP, integerLitP, stringLitP, charLitP]
   where
+  boolLit :: Parser Literal
+  boolLit = ((BoolLit True) <$ symbol "true") <|> ((BoolLit False) <$ symbol "false")
   nameLitP :: Parser Literal
   nameLitP = NameLit <$> idP
   charLitP :: Parser Literal

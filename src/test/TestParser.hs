@@ -20,6 +20,7 @@ parserSpec = it "parses stuff" pending
 
 literalPSpec :: Spec
 literalPSpec = describe "literals" $ do
+  it "bool" $ Right [BoolLit False, BoolLit True] == doParse (many literalP) "false true"
   it "name" $ Right [NameLit "bing", NameLit "bang", NameLit "boom"] == doParse (many literalP) "bing bang boom"
   it "integer" $ Right [IntegerLit 5, IntegerLit 6, IntegerLit 7] == doParse (many literalP) "5 6 7"
   it "char" $ Right [CharLit '5', CharLit '6', CharLit '7'] == doParse (many literalP) "'5' '6' '7'"
