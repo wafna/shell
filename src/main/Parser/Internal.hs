@@ -17,6 +17,8 @@ import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
+-- import Text.Megaparsec.Debug
+
 type Parser = Parsec Void Text
 
 data Literal
@@ -40,18 +42,26 @@ data Expr
   | ExprBinOp Expr BinaryOp Expr
   deriving (Eq, Show)
 
-spaceOut :: Parser ()
-spaceOut = L.space
+-- Discards blank space.
+spaceP :: Parser ()
+spaceP = L.space
   space1
   (L.skipLineComment "//")
   (L.skipBlockComment "/*" "*/")
 
+-- Combines a parser with discarding trailing space.
+spaceOut :: Parser a -> Parser a
+spaceOut p = p <* spaceP
+
 -- Encode the convention of discarding trailing space.
 lexeme :: Parser a -> Parser a
-lexeme = L.lexeme spaceOut
+lexeme = L.lexeme spaceP
 
 symbol :: Text -> Parser Text
-symbol = L.symbol spaceOut
+symbol = L.symbol spaceP
+
+parenthesized :: Parser a -> Parser a
+parenthesized p = spaceOut $ between (char '(') (char ')') p
 
 idP :: Parser String
 idP = lexeme $ do 
@@ -83,8 +93,8 @@ binaryOpP = choice [opP "+" BinOpAdd, opP "-" BinOpSub, opP "*" BinOpMul, opP "/
 
 -- All arithmetic is left associative and there is no precedence of operations.
 exprP :: Parser Expr
-exprP = do
-  h <- exprParenP <|> try exprHeadLitP <|> exprLitP
+exprP = spaceOut $ do
+  h <- exprAtomP
   t <- optional $ do 
     op <- binaryOpP
     r <- exprP
@@ -96,16 +106,18 @@ exprP = do
   -- TODO this needs to expand to cover object graphs, array indexing, etc.
   exprLitP :: Parser Expr
   exprLitP = ExprLit <$> literalP
+  exprAtomP :: Parser Expr
+  exprAtomP = exprParenP <|> exprLitP
   exprParenP :: Parser Expr
-  exprParenP = between (char '(') (char ')') exprP
-  -- This lets us grab the head of an arithmetic expression so we can be left associative.
-  exprHeadLitP :: Parser Expr
-  exprHeadLitP = do
-    h <- exprLitP
-    op <- binaryOpP
-    t <- exprLitP
-    return $ ExprBinOp h op t
-
+  exprParenP = parenthesized exprP
+  -- -- This lets us grab the head of an arithmetic expression so we can be left associative.
+  -- exprHeadLitP :: Parser Expr
+  -- exprHeadLitP = do
+  --   h <- exprAtomP
+  --   op <- binaryOpP
+  --   t <- exprAtomP
+  --   return $ ExprBinOp h op t
+-- 
 -- top parser
 
 shellP :: Parser String

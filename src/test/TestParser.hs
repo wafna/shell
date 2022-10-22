@@ -1,8 +1,5 @@
 module Main (main) where
 
--- import qualified Data.Map as Map
--- import qualified Data.Either as Either
--- import Data.List (intercalate)
 import Data.Text
 import Data.Void
 
@@ -31,9 +28,14 @@ binaryOpPSpec = describe "binary operators" $ do
   it "all" $ Right [BinOpAdd, BinOpSub, BinOpMul, BinOpDiv] == doParse (many binaryOpP) "+ - * /"
 
 exprSpec :: Spec
-exprSpec = describe "expressions" $ do
-    it "simple" $ Right (ExprLit (NameLit "x")) == doParse (exprP) "x"
-    it "arithmetic" $ Right (ExprBinOp (ExprBinOp (ExprLit (NameLit "x")) BinOpDiv (ExprLit (NameLit "y"))) BinOpMul (ExprLit (NameLit "z"))) == doParse (exprP) "x / y * z"
+exprSpec = 
+    let e1 = ExprBinOp (ExprLit (NameLit "x")) BinOpDiv (ExprBinOp (ExprLit (NameLit "y")) BinOpMul (ExprLit (NameLit "z")))
+    in
+    describe "expressions" $ do
+        it "simple" $ Right (ExprLit (NameLit "x")) == doParse (exprP) "x"
+        it "arithmetic" $ Right (ExprBinOp (ExprBinOp (ExprLit (NameLit "x")) BinOpDiv (ExprLit (NameLit "y"))) BinOpMul (ExprLit (NameLit "z"))) == doParse exprP "x / y * z"
+        it "e1 no paren" $ Right e1 == doParse exprP "x / y * z"
+        it "e1 head paren" $ Right e1 == doParse exprP "(x / y) * z"
 
 main :: IO ()
 main = hspec $ do
