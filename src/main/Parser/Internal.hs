@@ -31,10 +31,6 @@ spaceP = L.space
   (L.skipLineComment "//")
   (L.skipBlockComment "/*" "*/")
 
--- Combines a parser with discarding trailing space.
-spaceOut :: Parser a -> Parser a
-spaceOut p = p <* spaceP
-
 -- Encode the convention of discarding trailing space.
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme spaceP
@@ -75,8 +71,8 @@ binaryOpP = choice [opP "+" BinOpAdd, opP "-" BinOpSub, opP "*" BinOpMul, opP "/
 
 -- All arithmetic is left associative and there is no precedence of operations.
 exprP :: Parser Expr
-exprP = spaceOut $ do
-  h <- exprAtomP
+exprP = lexeme $ do
+  h <- try exprHead2P <|> exprAtomP
   t <- optional $ do 
     op <- binaryOpP
     r <- exprP
@@ -92,7 +88,12 @@ exprP = spaceOut $ do
   exprAtomP = exprParenP <|> exprLitP
   exprParenP :: Parser Expr
   exprParenP = parenthesized exprP
-  -- exprTail
+  exprHead2P :: Parser Expr
+  exprHead2P = lexeme $ do
+    l <- exprAtomP
+    op <- binaryOpP
+    r <- exprAtomP
+    return $ ExprBinOp op l r
 
 -- top parser
 shellP :: Parser String
