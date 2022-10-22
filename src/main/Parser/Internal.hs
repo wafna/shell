@@ -4,6 +4,7 @@ module Parser.Internal
   , Literal (..), literalP
   , BinaryOp (..), binaryOpP
   , Expr (..), exprP
+  , module Parser.Syntax
   ) where
 
 import Data.Text (Text)
@@ -17,30 +18,11 @@ import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
+import Parser.Syntax
+
 -- import Text.Megaparsec.Debug
 
 type Parser = Parsec Void Text
-
-data Literal
-  = NameLit String
-  | IntegerLit Integer
-  | StringLit String
-  | CharLit Char
-  | BoolLit Bool
-  deriving (Eq, Show)
-
-data UnaryOp
-  = UOBang
-  deriving (Eq, Show)
-
-data BinaryOp
-  = BinOpAdd | BinOpSub | BinOpMul | BinOpDiv
-  deriving (Eq, Show)
-
-data Expr
-  = ExprLit Literal
-  | ExprBinOp BinaryOp Expr Expr
-  deriving (Eq, Show)
 
 -- Discards blank space.
 spaceP :: Parser ()
@@ -61,7 +43,7 @@ symbol :: Text -> Parser Text
 symbol = L.symbol spaceP
 
 parenthesized :: Parser a -> Parser a
-parenthesized p = spaceOut $ between (char '(') (char ')') p
+parenthesized p = lexeme $ between (char '(') (char ')') p
 
 idP :: Parser String
 idP = lexeme $ do 
@@ -110,6 +92,7 @@ exprP = spaceOut $ do
   exprAtomP = exprParenP <|> exprLitP
   exprParenP :: Parser Expr
   exprParenP = parenthesized exprP
+  -- exprTail
 
 -- top parser
 shellP :: Parser String
