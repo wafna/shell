@@ -29,11 +29,11 @@ binaryOpPSpec = describe "binary operators" $ do
 
 exprSpec :: Spec
 exprSpec = 
-    let e1 = ExprBinOp (ExprLit (NameLit "x")) BinOpDiv (ExprBinOp (ExprLit (NameLit "y")) BinOpMul (ExprLit (NameLit "z")))
+    let e1 = ExprBinOp BinOpDiv (ExprLit (NameLit "x")) (ExprBinOp BinOpMul (ExprLit (NameLit "y")) (ExprLit (NameLit "z")))
     in
     describe "expressions" $ do
         it "simple" $ Right (ExprLit (NameLit "x")) == doParse (exprP) "x"
-        it "arithmetic" $ Right (ExprBinOp (ExprBinOp (ExprLit (NameLit "x")) BinOpDiv (ExprLit (NameLit "y"))) BinOpMul (ExprLit (NameLit "z"))) == doParse exprP "x / y * z"
+        it "arithmetic" $ Right (ExprBinOp BinOpDiv (ExprBinOp BinOpMul (ExprLit (NameLit "x")) (ExprLit (NameLit "y"))) (ExprLit (NameLit "z"))) == doParse exprP "x / y * z"
         it "e1 no paren" $ Right e1 == doParse exprP "x / y * z"
         it "e1 head paren" $ Right e1 == doParse exprP "(x / y) * z"
 

@@ -39,7 +39,7 @@ data BinaryOp
 
 data Expr
   = ExprLit Literal
-  | ExprBinOp Expr BinaryOp Expr
+  | ExprBinOp BinaryOp Expr Expr
   deriving (Eq, Show)
 
 -- Discards blank space.
@@ -101,7 +101,7 @@ exprP = spaceOut $ do
     return (op, r)
   return $ case t of 
     Nothing -> h
-    Just (op, r) -> ExprBinOp h op r
+    Just (op, r) -> ExprBinOp op h r
   where
   -- TODO this needs to expand to cover object graphs, array indexing, etc.
   exprLitP :: Parser Expr
@@ -110,16 +110,8 @@ exprP = spaceOut $ do
   exprAtomP = exprParenP <|> exprLitP
   exprParenP :: Parser Expr
   exprParenP = parenthesized exprP
-  -- -- This lets us grab the head of an arithmetic expression so we can be left associative.
-  -- exprHeadLitP :: Parser Expr
-  -- exprHeadLitP = do
-  --   h <- exprAtomP
-  --   op <- binaryOpP
-  --   t <- exprAtomP
-  --   return $ ExprBinOp h op t
--- 
--- top parser
 
+-- top parser
 shellP :: Parser String
 shellP = do
   e <- exprP
